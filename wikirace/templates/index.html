@@ -10,12 +10,12 @@
             return;
           }
         
-          fetch(`/suggest?q=${encodeURIComponent(query)}`)
+          fetch(`/suggest?q=${encodeURIComponent(query)}&l=5`)
             .then(res => res.json())
             .then(data => {
               const list = document.getElementById(field + 'Suggestions');
               list.innerHTML = '';
-              data.forEach(item => {
+              data[0].forEach(item => {
                 const li = document.createElement('li');
                 li.textContent = item;
                 li.className = "px-2 font-semibold cursor-pointer hover:text-[#cba6f7]";
@@ -27,6 +27,19 @@
               });
             });
         }
+
+        function handleSubmit() {
+              const start = document.getElementById('fromInput').value.trim();
+              const target = document.getElementById('toInput').value.trim();
+
+              if (!start || !target) {
+                alert('Please fill both "From" and "To" fields.');
+                return;
+              }
+
+              const query = new URLSearchParams({ start, target }).toString();
+              window.location.href = `/solve?${query}`;
+            }
         </script>
 </head>
 <body class="bg-[#1e1e2e] text-white font-sans">
@@ -39,32 +52,40 @@
         <p class="text-lg text-[#a6adc8] max-w-2xl text-center mb-10">
           Enter two Wikipedia pages to find the shortest path between them.
         </p>
-        <form class="w-full max-w-md flex flex-col gap-4" onsubmit="event.preventDefault();">
-            <input
-              id="fromInput"
-              type="text"
-              placeholder="From: e.g. Albert Einstein"
-              class="px-4 py-3 rounded-xl bg-[#313244] text-white placeholder-[#7f849c] focus:outline-none focus:ring-2 focus:ring-[#cba6f7]"
-              oninput="showSuggestions(this.value, 'from')"
-            />
-            <ul id="fromSuggestions" class="text-sm bg-[#313244] rounded-md max-h-40 overflow-auto mt-1"></ul>
-          
-            <input
-              id="toInput"
-              type="text"
-              placeholder="To: e.g. Theory of Relativity"
-              class="px-4 py-3 rounded-xl bg-[#313244] text-white placeholder-[#7f849c] focus:outline-none focus:ring-2 focus:ring-[#cba6f7]"
-              oninput="showSuggestions(this.value, 'to')"
-            />
-            <ul id="toSuggestions" class="text-sm bg-[#313244] rounded-md max-h-40 overflow-auto mt-1"></ul>
-          
-            <button
-              type="submit"
-              class="mt-2 bg-[#94e2d5] text-[#1e1e2e] font-semibold px-6 py-3 rounded-xl shadow-lg transition hover:bg-[#89dceb]"
+        <form
+              id="wikiraceForm"
+              class="w-full max-w-md flex flex-col gap-4"
+              onsubmit="event.preventDefault(); handleSubmit();"
             >
-              Solve
-            </button>
-          </form>
+              <input
+                id="fromInput"
+                name="start"
+                type="text"
+                placeholder="From: e.g. Albert Einstein"
+                class="px-4 py-3 rounded-xl bg-[#313244] text-white placeholder-[#7f849c] focus:outline-none focus:ring-2 focus:ring-[#cba6f7]"
+                oninput="showSuggestions(this.value, 'from')"
+                required
+              />
+              <ul id="fromSuggestions" class="text-sm bg-[#313244] rounded-md max-h-40 overflow-auto mt-1"></ul>
+
+              <input
+                id="toInput"
+                name="target"
+                type="text"
+                placeholder="To: e.g. Theory of Relativity"
+                class="px-4 py-3 rounded-xl bg-[#313244] text-white placeholder-[#7f849c] focus:outline-none focus:ring-2 focus:ring-[#cba6f7]"
+                oninput="showSuggestions(this.value, 'to')"
+                required
+              />
+              <ul id="toSuggestions" class="text-sm bg-[#313244] rounded-md max-h-40 overflow-auto mt-1"></ul>
+
+              <button
+                type="submit"
+                class="mt-2 bg-[#94e2d5] text-[#1e1e2e] font-semibold px-6 py-3 rounded-xl shadow-lg transition hover:bg-[#89dceb]"
+              >
+                Solve
+              </button>
+            </form>
       </section>
     </div>
   </body>

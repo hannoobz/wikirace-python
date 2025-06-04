@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#1c1c2b]">
+<head>
+  <title>hannoobz's wikirace solver - result</title>
+  {% include "_head.html" %}
+  <script>
+    const startText = '{{ start }}';
+    const targetText = '{{ target }}';
+    
+    console.log("Start text:", startText);
+    console.log("Target text:", targetText);
+  
+    async function getWikiUrl(query) {
+        console.log("Fetching suggestion for:", query);
+        if (!query) return null;
+
+        const res = await fetch(`/suggest?q=${encodeURIComponent(query)}&l=1`);
+        const data = await res.json();
+        console.log("Suggestion result:", data);
+
+        const fullUrl = data[1]?.[0] || "";
+        return fullUrl.includes("/wiki/") ? fullUrl.substring(fullUrl.indexOf("/wiki/")) : null;
+    }
+
+    async function startCrawl() {
+        document.getElementById('main-content').innerHTML = `
+            <p class="text-lg">Solving from <strong>${startText}</strong> to <strong>${targetText}</strong>...</p>
+            <p class="text-sm text-gray-400 mt-2">Finding Wikipedia URLs...</p>
+        `;
+
+        try {
+            if (!startText || !targetText) {
+                document.getElementById('main-content').innerHTML = "<p class='text-red-400'>Missing start or target page.</p>";
+                return;
+            }
+
+            const [startUrl, targetUrl] = await Promise.all([
+                getWikiUrl(startText),
+                getWikiUrl(targetText)
+            ]);
+
+            console.log("Start URL:", startUrl);
+            console.log("Target URL:", targetUrl);
+
+            if (!startUrl || !targetUrl) {
+                document.getElementById('main-content').innerHTML = `
+                    <p class='text-red-400'>Could not resolve both pages.</p>
+                    <p class='text-sm text-gray-400'>Start URL: ${startUrl || 'Not found'}</p>
+                    <p class='text-sm text-gray-400'>Target URL: ${targetUrl || 'Not found'}</p>
+                `;
+                return;
+            }
+
+            document.getElementById('main-content').innerHTML = `
+                <p class="text-lg">Solving from <strong>${startText}</strong> to <strong>${targetText}</strong>...</p>
+                <p class="text-sm text-gray-400 mt-2">Crawling Wikipedia links...</p>
+            `;
+
+            const res = await fetch(`/crawl?start=${encodeURIComponent(startUrl)}&target=${encodeURIComponent(targetUrl)}`);
+            const data = await res.json();
+
+            console.log("Crawl response:", data);
+
+            if (res.status !== 200) {
+                document.getElementById('main-content').innerHTML = `<p class='text-red-400'>Error: ${data.error || 'Unknown error'}</p>`;
+                return;
+            }
+
+            if (!data.path || !Array.isArray(data.path)) {
+                document.getElementById('main-content').innerHTML = "<p class='text-red-400'>Failed to retrieve path.</p>";
+                return;
+            }
+
+            const path = data.path;
+            const resultHtml = `
+                <div class="mx-auto text-center font-mono text-sm whitespace-pre-wrap leading-6">
+            ${path.map((p, idx) => {
+                const label = p.replace('/wiki/', '').replace(/_/g, ' ');
+                const url = `https://en.wikipedia.org${p}`;
+                const arrow = idx < path.length - 1 ? '↓' : '';
+                return `<div><a href="${url}" class="text-[#f9b38a] underline hover:text-[#d7a9da] text-2xl" target="_blank">${label}</a></div>${arrow ? `<div class="my-1 text-5xl">↓</div>` : ''}`;
+            }).join('\n')}
+                </div>
+                `;
+
+            document.getElementById('main-content').innerHTML = `
+                <div class="max-w-4xl w-full">
+                    <h2 class="text-4xl font-semibold mb-6 text-center text-[#cba6f7]">Path found in ${path.length-1} steps!</h2>
+                    <div class="bg-[#313244] rounded-xl p-6">
+                        <ol class="list-decimal pl-6 space-y-2">${resultHtml}</ol>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <a href="/" class="bg-[#94e2d5] text-[#1e1e2e] font-semibold px-6 py-3 rounded-xl shadow-lg transition hover:bg-[#89dceb] inline-block">
+                            Solve Another
+                        </a>
+                    </div>
+                </div>
+            `;
+        } catch (err) {
+            console.error("Error during crawl:", err);
+            document.getElementById('main-content').innerHTML = `<p class='text-red-400'>Error occurred during crawl: ${err.message}</p>`;
+        }
+    }
+
+    window.onload = startCrawl;
+  </script>
+</head>
+<body class="bg-[#1e1e2e] text-white font-sans">
+  <div class="min-h-screen flex flex-col">
+    {% include "_navbar.html" %}
+    <section id="main-content" class="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <p class="text-lg">Solving from <strong>{{ start }}</strong> to <strong>{{ target }}</strong>...</p>
+    </section>
+  </div>
+</body>
+</html>
+
+
