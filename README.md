@@ -59,3 +59,11 @@ flask --app wikirace run
 ```
 
 Go to: http://localhost:5000
+
+## UI Preview
+https://github.com/user-attachments/assets/98ded4fc-4e77-4a42-b59f-35ccb241c24b
+
+
+<br><sub>Built by <a href="https://github.com/hannoobz">Hanief Fatkhan N</a></sub>
+
+
